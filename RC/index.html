@@ -1,0 +1,2056 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Righteous Connections</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f8f8;
+            scroll-behavior: smooth;
+        }
+
+        /*Logo Orbit Widget*/
+        /* --- CSS Custom Properties (Variables) --- */
+        :root {
+            /* Widget Dimensions */
+            --size: 420px;
+            --padding: 24px;
+            --logo-size: 220px;
+            --icon-size: 44px;
+            --radius: 160px;
+
+            /* Colors and Effects */
+            --halo-color: rgba(70, 160, 255, 0.35);
+            --fg: #e9eefc;
+            --muted: #b6c1d9;
+
+            /* Branded colors for the SVGs */
+            --color-twitter: #1DA1F2;
+            --color-github: #F0F6FC;
+            --color-linkedin: #0A66C2;
+            --color-instagram: #E4405F;
+            --color-facebook: #1877F2;
+            --color-email: #A0C3FF;
+        }
+
+        /* --- Widget Base Structure --- */
+        .orbit-wrap {
+            position: relative;
+            width: var(--size);
+            height: var(--size);
+            padding: var(--padding);
+            box-sizing: border-box;
+            border-radius: 16px;
+            background: linear-gradient(180deg, #121528, #0b0e1c);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            overflow: hidden;
+        }
+
+        /* Group wrapper for scaling the entire orbit section */
+        .group {
+            position: absolute;
+            inset: 0;
+            transform-origin: 50% 50%;
+            transition: transform 220ms ease;
+        }
+
+        /* Central circular logo */
+        .logo {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: var(--logo-size);
+            height: var(--logo-size);
+            transform: translate(-50%, -50%);
+            transform-origin: 50% 50%;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+            outline: 2px solid rgba(255, 255, 255, 0.08);
+            z-index: 2;
+            transition: transform 220ms ease;
+        }
+
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            pointer-events: none;
+        }
+
+        /* Orbit layer sits centered */
+        .orbit {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 100%;
+            height: 100%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+        }
+
+        /* --- Icon Styles --- */
+        .icon {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: var(--icon-size);
+            height: var(--icon-size);
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+
+            background: transparent;
+            box-shadow: none;
+            color: var(--fg);
+            text-decoration: none;
+
+            transition: box-shadow 180ms ease, background 180ms ease, transform 120ms ease;
+            will-change: transform;
+            pointer-events: auto;
+        }
+
+        /* Keeps the icon content upright during orbit and allows it to be scaled */
+        .icon>span {
+            transform: none;
+            pointer-events: none;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0;
+            /* REVERTED: Removed transition: transform 220ms ease; */
+        }
+
+        /* Styling for the embedded SVG */
+        .icon span svg {
+            width: 50%;
+            height: 50%;
+            fill: currentColor;
+            pointer-events: none;
+            filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+        }
+
+        /* Branding: Use the data attribute to set the base color for SVG inheritance */
+        .icon[data-icon-type="twitter"] {
+            color: var(--color-twitter);
+        }
+
+        .icon[data-icon-type="github"] {
+            color: var(--color-github);
+        }
+
+        .icon[data-icon-type="linkedin"] {
+            color: var(--color-linkedin);
+        }
+
+        .icon[data-icon-type="instagram"] {
+            color: var(--color-instagram);
+        }
+
+        .icon[data-icon-type="facebook"] {
+            color: var(--color-facebook);
+        }
+
+        .icon[data-icon-type="email"] {
+            color: var(--color-email);
+        }
+
+
+        /* --- Hover Interactions (Logo) --- */
+
+        /* Scales group (orbit radius + icons) slightly (1.05) */
+        .orbit-wrap.logo-hover .group {
+            transform: scale(1.05);
+        }
+
+        /* Scales the logo (1.15) more than the group (1.05) */
+        .orbit-wrap.logo-hover .logo {
+            transform: translate(-50%, -50%) scale(1.15);
+        }
+
+        /* REVERTED: Removed scaling of the icon content itself */
+
+        /* Hover/focus halo effect only, background remains transparent */
+        .icon:hover,
+        .icon:focus-visible {
+            box-shadow: 0 0 0 10px var(--halo-color);
+            background: transparent;
+            outline: none;
+        }
+
+        /* Caption */
+        .caption {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 2 * var(--padding));
+            text-align: center;
+            font-size: 12px;
+            color: var(--muted);
+            letter-spacing: 0.02em;
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            .icon {
+                transition: none;
+            }
+        }
+
+        /* include hover/focus styles, caption, etc. */
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        /* Timeline styling for the Gala section */
+        .timeline {
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #9333ea;
+            /* Purple */
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            padding-left: 20px;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -8px;
+            top: 0;
+            width: 20px;
+            height: 20px;
+            background: #f59e0b;
+            /* Amber */
+            border: 4px solid #f8f8f8;
+            border-radius: 50%;
+        }
+
+        /* --- Sponsor Banner Styling --- */
+        .scrolling-banner {
+            overflow: hidden;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+        }
+
+        .scrolling-banner-inner {
+            display: inline-block;
+            animation: scroll-left 30s linear infinite;
+            padding: 10px 0;
+        }
+
+        .logo-item {
+            display: inline-block;
+            padding: 0 40px;
+            height: 60px;
+            /* Set a consistent height for logos */
+        }
+
+        .logo-item img {
+            max-height: 100%;
+            width: auto;
+            filter: grayscale(100%) brightness(150%);
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        .logo-item img:hover {
+            opacity: 1;
+        }
+
+        @keyframes scroll-left {
+            0% {
+                transform: translateX(0%);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+
+        /* Ensure two sets of logos are present for continuous scroll */
+        .scrolling-banner-inner {
+            width: 200%;
+            /* Double the width to hold two copies of the logos */
+        }
+
+        /* --- New Carousel/Tiled Styles --- */
+        .scroll-carousel {
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        @media (max-width: 767px) {
+            .carousel-nav {
+                display: block;
+                /* FIX: Remove background and shadow on mobile */
+                background: transparent;
+                box-shadow: none;
+            }
+
+            .carousel-nav.prev {
+                left: 10px;
+            }
+
+            .carousel-nav.next {
+                right: 10px;
+            }
+
+            /* FIX: Override hover effect on mobile to keep it transparent */
+            .carousel-nav:hover {
+                background: transparent;
+                /* Remove the scale effect to avoid odd visual on transparent button */
+                transform: translateY(-50%);
+                opacity: 1;
+            }
+        }
+
+        /* Mobile Styling (iOS/Android - Single centered tile fix) */
+        @media (max-width: 767px) {
+            .scroll-carousel {
+                /* Set scroll-padding to enable the first and last tile to snap to the center. 
+                    85% tile width means 7.5% margin on each side for centering */
+                scroll-padding-inline: 7.5%;
+            }
+
+            .scroll-carousel-item {
+                /* Set a fixed centered width (e.g., 85% of viewport width) */
+                flex: 0 0 85%;
+                width: 85%;
+
+                scroll-snap-align: center;
+                /* Center the tile */
+
+                /* scroll-snap-align: start; */
+                /* Use padding-right to account for space-x-6 */
+                padding-right: 1.5rem;
+                box-sizing: border-box;
+                /* FIX: Ensure bounding box is taller on small devices to prevent occlusion */
+                min-height: 40vh;
+                /* Added to address overlap/occlusion on smaller devices */
+
+                /* iOS Fix: Use margin-right for spacing (1rem = 16px) instead of Tailwind's margin-left */
+                margin-right: 16px;
+                margin-left: 0 !important;
+                /* Safety to clear any Tailwind margin-left */
+
+                box-sizing: border-box;
+                padding: 0;
+            }
+
+            /* The last tile's margin-right should be 0, as the scroll-padding-right handles the final snap space */
+            .scroll-carousel-item:last-child {
+                margin-right: 0;
+            }
+        }
+
+        /* Desktop/Tablet Styling (Tile Set Centering) */
+        @media (min-width: 768px) {
+            .scroll-carousel {
+                scroll-snap-type: none;
+                /* Disable snapping on desktop */
+                scroll-padding-inline: 0;
+                /* Clear mobile scroll-padding */
+                /* Center the *set* of tiles when they don't fill the container */
+                justify-content: center;
+            }
+
+            .scroll-carousel-item {
+                /* Desktop: 3 tiles, space-x-8 (32px gap) - Restores original layout logic */
+                flex: 0 0 calc(33.333% - 21.333px);
+                width: calc(33.333% - 21.333px);
+
+                /* Use margin-right for spacing */
+                margin-right: 32px;
+                margin-left: 0 !important;
+                /* Safety */
+
+                scroll-snap-align: start;
+                /* Does not matter as snap is disabled */
+            }
+
+            /* Remove the margin from the last item to fit 3 in a row */
+            .scroll-carousel-item:last-child {
+                margin-right: 0;
+            }
+        }
+
+        /* Navigation Button Styling */
+        .carousel-nav {
+            position: absolute;
+            top: 70%;
+            /* MODIFIED: Moved down to avoid occluding text/titles on mobile */
+            transform: translateY(-50%);
+            z-index: 20;
+            display: none;
+            /* Hidden by default, shown on mobile */
+            background: #4a148c;
+            /* Purple */
+            color: white;
+            padding: 10px;
+            border-radius: 50%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+            opacity: 0.8;
+            cursor: pointer;
+        }
+
+        .carousel-nav:hover {
+            opacity: 1;
+            background: #f59e0b;
+            /* Amber */
+        }
+
+        /* Show nav buttons only on mobile (below md breakpoint) */
+        @media (max-width: 767px) {
+            .carousel-nav {
+                display: block;
+            }
+
+            .carousel-nav.prev {
+                left: 10px;
+            }
+
+            .carousel-nav.next {
+                right: 10px;
+            }
+        }
+
+        /* --- New Animation Styles for Reveal on Scroll --- */
+        .animate-reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        .is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ADDED: Styles for elegant modal transition */
+        .content-transition {
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .content-transition.is-visible {
+            opacity: 1;
+        }
+
+        /* --- FIX: Scroll Offset to prevent fixed header occlusion --- */
+        section[id] {
+            scroll-margin-top: 100px;
+            /* Accounts for header height (~64px) + margin/padding */
+        }
+    </style>
+</head>
+
+<body class="text-gray-800">
+
+    <header class="bg-[#4a148c] text-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-3xl font-bold tracking-tight">Righteous Connections</h1>
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#our-story" class="hover:text-amber-400 transition duration-300">About</a>
+                    <a href="#programs" class="hover:text-amber-400 transition duration-300">Programs</a>
+                    <a href="#testimonials" class="hover:text-amber-400 transition duration-300">Testimonials</a>
+                    <a href="#gala" class="hover:text-amber-400 transition duration-300">Gala</a>
+                    <a href="#get-involved" class="hover:text-amber-400 transition duration-300">Connect</a>
+                    <a href="./RC_Merch.html"
+                        class="hover:text-amber-400 transition duration-300 font-semibold">Merch</a>
+                    <a href="#tax-status-anchor" id="nav-tax-toggle"
+                        class="hover:text-amber-400 transition duration-300 text-xs uppercase self-center opacity-70">Tax
+                        Info</a>
+                </nav>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden p-2 rounded-md hover:bg-white/10 transition duration-300">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7">
+                    </path>
+                </svg>
+            </button>
+        </div>
+        <nav id="mobile-menu" class="md:hidden hidden bg-[#4a148c] px-4 pb-2 space-y-2">
+            <a href="#our-story" class="block py-2 hover:bg-white/10 rounded-md transition duration-300">Our Story</a>
+            <a href="#programs" class="block py-2 hover:bg-white/10 rounded-md transition duration-300">Programs</a>
+            <a href="#testimonials"
+                class="block py-2 hover:bg-white/10 rounded-md transition duration-300">Testimonials</a>
+            <a href="#gala" class="block py-2 hover:bg-white/10 rounded-md transition duration-300">Gala</a>
+            <a href="#get-involved" class="block py-2 hover:bg-white/10 rounded-md transition duration-300">Get
+                Involved</a>
+            <a href="./RC_Merch.html"
+                class="block py-2 hover:bg-white/10 rounded-md transition duration-300 font-semibold">Merch</a>
+            <a href="#tax-status-anchor" id="mobile-tax-toggle"
+                class="block py-2 hover:bg-white/10 rounded-md transition duration-300">Tax Status</a>
+        </nav>
+    </header>
+
+    <section id="hero" class="relative bg-cover bg-center py-16 md:py-36 text-center"
+        style="background-image: url('./RighteousConnectionsBanner.jpg');">
+        <div class="absolute inset-0 bg-black opacity-50"></div>
+        <div class="relative z-10 text-white">
+            <h2 class="text-5xl md:text-7xl font-extrabold mb-4">Righteous Connections</h2>
+            <p class="text-xl md:text-2xl max-w-4xl mx-auto">
+                Driving <strong>Economic, Educational, Emotional, & Social Growth</strong> to our community and beyond.
+            </p>
+            <div class="mt-6 md:mt-8 flex justify-center space-x-4">
+                <a href="#get-involved"
+                    class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:scale-105 inline-block text-sm md:text-base">
+                    Support Our Mission
+                </a>
+                <a href="./RC_Merch.html"
+                    class="bg-[#4a148c] hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:scale-105 inline-block text-sm md:text-base">
+                    Get Merch
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section id="sponsors" class="bg-white py-4 border-b border-gray-100 shadow-sm">
+        <div class="scrolling-banner">
+            <div id="sponsor-banner-inner" class="scrolling-banner-inner">
+            </div>
+        </div>
+    </section>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="mission" class="text-center my-8 md:my-16">
+            <h2 class="text-4xl font-bold mb-4">What Is a Righteous Connection?</h2>
+            <p class="text-lg max-w-3xl mx-auto mb-6 md:mb-10">
+                <strong>Righteous Connections</strong> is here to help <strong>you</strong> not just achieve, but
+                <strong>exceed your goals</strong> by <strong>connecting</strong>
+                you or your organization with our <strong>national network</strong> of righteous businesses,
+                non-profits,
+                and individuals that are <strong>here to help</strong> - all within a <strong>mutually
+                    beneficial
+                    ecosystem.</strong>
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div
+                    class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-[#0047AB] hover:shadow-2xl transition duration-300 hover:scale-[1.03]">
+                    <span class="text-4xl" role="img" aria-label="Money Bag">💰</span>
+                    <h3 class="text-2xl font-bold mt-4 mb-2">Economic</h3>
+                    <p>Fostering self-sufficiency, equitable support structures, and financial stability as a foundation
+                        for a new life.</p>
+                </div>
+                <div
+                    class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-[#FF3131] hover:shadow-2xl transition duration-300 hover:scale-[1.03]">
+                    <span class="text-4xl" role="img" aria-label="Graduation Cap">🎓</span>
+                    <h3 class="text-2xl font-bold mt-4 mb-2">Educational</h3>
+                    <p>Breaking stigmas and providing knowledge to facilitate forward thinking, life-changing evolution
+                        in a possitive and proactive
+                        way.</p>
+                </div>
+                <div
+                    class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-[#FFD700] hover:shadow-2xl transition duration-300 hover:scale-[1.03]">
+                    <span class="text-4xl" role="img" aria-label="Heart">❤️</span>
+                    <h3 class="text-2xl font-bold mt-4 mb-2">Emotional</h3>
+                    <p>Restoring hope and cultivating resilience by sharing stories, building confidence, and creating
+                        a shared narrative.</p>
+                </div>
+                <div
+                    class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-[#FFA500] hover:shadow-2xl transition duration-300 hover:scale-[1.03]">
+                    <span class="text-4xl" role="img" aria-label="People">👥</span>
+                    <h3 class="text-2xl font-bold mt-4 mb-2">Social</h3>
+                    <p>Building supportive networks and integrating individuals and organizatios into their communities.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="our-story"
+            class="animate-reveal relative bg-cover bg-center py-12 md:py-16 text-center rounded-lg overflow-hidden my-8 md:my-16"
+            style="background-image: url('./RighteousConnectionsBanner.jpg');">
+            <div class="absolute inset-0 bg-black opacity-50"></div>
+            <div class="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-10 md:mb-16">
+                    <h2 class="text-4xl font-bold text-[#ffffff] mb-4">About Righteous Connections</h2>
+                    <p class="text-lg text-[#ffffff] max-w-3xl mx-auto">We are dedicated to igniting and spearheading
+                        transformative change through community, support, and shared experience. We help people and
+                        institutions change the narrative in possitive ways by facilitating co-creative environments
+                        where individuals, businessess, and communities can thrive.
+                    </p>
+                </div>
+                <div class="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+                    <div>
+                        <h3 class="text-3xl font-semibold text-[#ffffff] mb-4">Our Story</h3>
+                        <p class="text-[#ffffff] mb-4">
+                            Righteous Connections was born from the shared strength of individuals who have transformed
+                            adversity into purpose. Built by people from all walks of life who have faced hardship -
+                            including poverty, trauma, loss, addiction, disease, and even death - the foundation stands
+                            as living proof that
+                            hope
+                            can rise from the ashes of undoing.
+
+                        </p>
+                        <p class="text-[#ffffff] mb-4">
+
+                            What began as a vision to bring light into dark places has evolved into a united, communal
+                            effort to confront the realities of mental health, homelessness, and substance abuse. Guided
+                            by compassion, integrity, and collective experience, Righteous Connections exists to empower
+                            others to find their way forward — together.
+
+                        </p>
+                    </div>
+                    <div class="orbit-wrap">
+                        <div class="logo" id="logo">
+                            <img src="./RC_Logo.png" alt="Brand logo" />
+                        </div>
+                        <div class="orbit" id="orbit"></div>
+                        <div class="caption">Follow and connect</div>
+                    </div>
+
+
+                </div>
+            </div>
+        </section>
+
+        <section id="programs" class="animate-reveal mt-8 mb-8 md:mt-16 md:mb-16">
+            <h2 class="text-4xl font-bold text-[#4a148c] text-center mb-6">Core Programs</h2>
+            <p class="text-center text-sm text-gray-500 max-w-4xl mx-auto mb-6 md:mb-8">
+                <span class="font-semibold">Content Source:</span> Program details are dynamically loaded from our
+                <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQMsZeFfmW5hwiFwswHpKUBuZANGQkkfe6Hih5DqV3YXnNtmZBrbvc8txXkbu6wSysdcaQbOsp6qJDc/pubhtml?gid=1147932087&single=true"
+                    target="_blank"
+                    class="text-amber-500 hover:text-amber-600 underline transition duration-300">Program Data Sheet
+                    (Tab 1)</a>, with a fallback to <strong>./programs_data.tsv</strong>.
+            </p>
+            <div class="relative">
+                <div id="programs-carousel" class="flex overflow-x-scroll scroll-carousel pb-4">
+                    <div
+                        class="scroll-carousel-item bg-white p-6 rounded-lg shadow-xl hover:shadow-2xl transition duration-300 border-t-4 border-gray-300 hover:scale-[1.03]">
+                        <h3 class="text-2xl font-semibold text-gray-900 mb-3 flex items-center">
+                            <span class="mr-2 text-3xl text-gray-500 animate-spin">🔄</span> Loading Programs...
+                        </h3>
+                        <p class="text-gray-600">
+                            Please wait while we fetch the latest program details from our data sheet.
+                        </p>
+                    </div>
+                </div>
+                <button id="programs-prev" class="carousel-nav prev">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+                        </path>
+                    </svg>
+                </button>
+                <button id="programs-next" class="carousel-nav next">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+        </section>
+        <section id="featured-merch"
+            class="animate-reveal mt-8 mb-8 md:mt-16 md:mb-16 bg-white p-8 rounded-lg shadow-2xl text-center">
+            <h2 class="text-4xl font-bold text-[#4a148c] mb-4">Featured Merch</h2>
+            <p class="text-xl text-gray-700 max-w-4xl mx-auto mb-8">
+                Every purchase directly supports our core programs. Connect with us and look great doing it!
+            </p>
+            <div class="p-6 bg-purple-50 rounded-lg border border-purple-200">
+                <p class="text-2xl font-semibold text-purple-900 mb-6">Our full collection is launching soon!</p>
+                <a href="./RC_Merch.html"
+                    class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:scale-105 inline-block text-lg">
+                    All Products
+                </a>
+            </div>
+        </section>
+        <section id="testimonials"
+            class="animate-reveal relative bg-cover bg-center py-12 md:py-16 text-center rounded-lg overflow-hidden"
+            style="background-image: url('./RighteousConnectionsBanner.jpg');">
+            <div class="absolute inset-0 bg-black opacity-50"></div>
+            <div class="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-4xl font-bold text-[#ffffff] text-center mb-6">Stories of Transformation</h2>
+                <p class="text-center text-sm text-white/70 max-w-4xl mx-auto mb-6 md:mb-8">
+                    <span class="font-semibold">Content Source:</span> All testimonial stories are dynamically loaded
+                    from our
+                    <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQMsZeFfmW5hwiFwswHpKUBuZANGQkkfe6Hih5DqV3YXnNtmZBrbvc8txXkbu6wSysdcaQbOsp6qJDc/pubhtml?gid=2053904015&single=true"
+                        target="_blank"
+                        class="text-amber-300 hover:text-amber-500 underline transition duration-300">Testimonial Data
+                        Sheet (Tab 2)</a>, with a fallback to <strong>./testimonials_data.tsv</strong>.
+                </p>
+
+                <div class="relative">
+                    <div id="testimonials-carousel" class="flex overflow-x-scroll scroll-carousel pb-4">
+                        <div
+                            class="scroll-carousel-item bg-white p-6 rounded-lg shadow-xl border-b-4 border-amber-500 hover:scale-[1.03]">
+                            <p class="font-serif italic text-xl text-neutral-700 mb-4">"Loading testimonials..."</p>
+                            <h4 class="font-semibold text-secondary-dark text-lg">- Loading</h4>
+                        </div>
+                    </div>
+                    <button id="testimonials-prev" class="carousel-nav prev">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7">
+                            </path>
+                        </svg>
+                    </button>
+                    <button id="testimonials-next" class="carousel-nav next">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section id="gala" class="animate-reveal mt-8 mb-8 md:mt-16 md:mb-16 bg-white p-8 rounded-lg shadow-2xl">
+            <h2 class="text-4xl font-bold text-[#4a148c] text-center mb-6">The Black Tie Gala</h2>
+            <p class="text-xl text-gray-700 max-w-4xl mx-auto mb-8 md:mb-10 text-center">
+                Our flagship fundraising event brings together world leaders, philanthropists, and celebrities for an
+                unforgettable black-tie dinner experience.
+            </p>
+
+            <div class="mb-12 md:mb-20">
+                <h3 class="text-2xl font-semibold text-gray-900 mb-4 border-b pb-2 text-center">An Evening of
+                    Elegance...
+                </h3>
+                <div class="grid md:grid-cols-2 gap-8 md:gap-12">
+                    <div class="timeline">
+                        <h4 class="text-xl font-bold text-[#4a148c] mb-6">Event Timeline</h4>
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <h5 class="font-semibold text-gray-900">6:00 PM: Doors Open & Networking Reception</h5>
+                            <p class="text-sm text-gray-600">Enjoy cocktails and hors d'oeuvres while connecting with
+                                guests.</p>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <h5 class="font-semibold text-gray-900">7:00 PM: Dinner Service & Keynote Speeches</h5>
+                            <p class="text-sm text-gray-600">A multi-course gourmet dinner is served, followed by
+                                inspirational addresses.</p>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <h5 class="font-semibold text-gray-900">8:30 PM: Live Auction & Patron Recognition</h5>
+                            <p class="text-sm text-gray-600">Bid on exclusive items and recognize our most generous
+                                sponsors.</p>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <h5 class="font-semibold text-gray-900">9:30 PM: Entertainment & Closing</h5>
+                            <p class="text-sm text-gray-600">Live music and dancing to conclude the night's festivities.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h4 class="text-xl font-bold text-[#4a148c] mb-6 text-center">Featuring Guest Speakers</h4>
+                        <ul class="space-y-4">
+                            <li class="p-4 bg-gray-100 rounded-lg shadow-md">
+                                <p class="font-semibold text-gray-900">Dr. Evelyn Reed</p>
+                                <p class="text-sm text-gray-600">Global Health Policy Advisor</p>
+                            </li>
+                            <li class="p-4 bg-gray-100 rounded-lg shadow-md">
+                                <p class="font-semibold text-gray-900">Mr. Marcus Chen</p>
+                                <p class="text-sm text-gray-600">Tech Entrepreneur & Philanthropist</p>
+                            </li>
+                            <li class="p-4 bg-gray-100 rounded-lg shadow-md">
+                                <p class="font-semibold text-gray-900">Ambassador Lena Khan</p>
+                                <p class="text-sm text-gray-600">Human Rights Advocate</p>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div id="gala-tiers-anchor">
+                <h3 class="text-3xl font-bold text-[#4a148c] text-center mb-6 md:mb-8">Secure Your Place: Table
+                    Sponsorship Tiers
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                    <div
+                        class="p-6 text-center border-t-4 border-gray-500 rounded-lg shadow-xl bg-white hover:shadow-2xl transition duration-300 hover:scale-[1.03]">
+                        <p class="text-2xl font-semibold text-gray-700 mb-2">White Table</p>
+                        <p class="text-5xl font-extrabold text-gray-900 mb-4">$500</p>
+                        <ul class="text-sm text-gray-600 mb-6 space-y-2 text-left mx-auto max-w-xs">
+                            <li>✔️ 2 Gala Tickets (Prime Seating)</li>
+                            <li>✔️ Logo Display in Digital Program</li>
+                            <li>✔️ Mention in Post-Event Newsletter</li>
+                            <li>✔️ Recognition on Sponsors Wall</li>
+                        </ul>
+                        <button
+                            class="sponsor-gala w-full bg-gray-500 hover:bg-gray-400 text-white font-bold py-2 px-4 rounded-full transition duration-300 transform hover:scale-[1.02]"
+                            data-amount="500" data-tier="White">
+                            Commit to White Table ($500)
+                        </button>
+                    </div>
+
+                    <div
+                        class="p-6 text-center border-t-4 border-purple-600 rounded-lg shadow-xl bg-white hover:shadow-2xl transition duration-300 hover:scale-[1.03]">
+                        <p class="text-2xl font-semibold text-purple-700 mb-2">Purple Table</p>
+                        <p class="text-5xl font-extrabold text-[#4a148c] mb-4">$1,000</p>
+                        <ul class="text-sm text-gray-600 mb-6 space-y-2 text-left mx-auto max-w-xs">
+                            <li>✔️ 4 Gala Tickets (VIP Seating)</li>
+                            <li>✔️ Half-Page Ad in Program Book</li>
+                            <li>✔️ Social Media Highlight & Mention</li>
+                            <li>✔️ Exclusive Pre-Event Reception Access</li>
+                        </ul>
+                        <button
+                            class="sponsor-gala w-full bg-[#4a148c] hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 transform hover:scale-[1.02]"
+                            data-amount="1000" data-tier="Purple">
+                            Commit to Purple Table ($1,000)
+                        </button>
+                    </div>
+
+                    <div
+                        class="p-6 text-center border-t-4 border-black rounded-lg shadow-xl bg-white hover:shadow-2xl transition duration-300 hover:scale-[1.03]">
+                        <p class="text-2xl font-semibold text-gray-700 mb-2">Black Table</p>
+                        <p class="text-5xl font-extrabold text-gray-900 mb-4">$5,000</p>
+                        <ul class="text-sm text-gray-600 mb-6 space-y-2 text-left mx-auto max-w-xs">
+                            <li>✔️ 10 Gala Tickets (Table Host)</li>
+                            <li>✔️ Full-Page Feature in Program Book</li>
+                            <li>✔️ Dedicated Media Recognition (Press Release)</li>
+                            <li>✔️ Private Meet-and-Greet with Keynote Speakers</li>
+                        </ul>
+                        <button
+                            class="sponsor-gala w-full bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-full transition duration-300 transform hover:scale-[1.02]"
+                            data-amount="5000" data-tier="Black">
+                            Commit to Black Table ($5,000)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-8 md:mt-12">
+                <p class="text-lg text-gray-700 mb-4">For the ultimate commitment, consider becoming a</p>
+                <button
+                    class="sponsor-gala bg-amber-500 hover:bg-amber-600 text-[#4a148c] font-extrabold py-3 px-10 rounded-full shadow-xl transition duration-300 transform hover:scale-105 inline-block text-xl uppercase tracking-wider"
+                    data-amount="25000" data-tier="Lifetime">
+                    Lifetime Patron Member ($25,000)
+                </button>
+            </div>
+        </section>
+
+        <section id="commitment"
+            class="animate-reveal mt-8 mb-8 md:mt-16 md:mb-16 bg-purple-100 p-8 rounded-lg shadow-2xl">
+            <h2 class="text-4xl font-bold text-[#4a148c] text-center mb-8 md:mb-12">Our Commitment: Funding Allocation
+            </h2>
+            <div class="flex flex-col lg:flex-row gap-8">
+                <div class="lg:w-1/2 text-center">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-6">Funding</h3>
+                    <div class="chart-container mx-auto">
+                        <canvas id="sourcesChart"></canvas>
+                    </div>
+                </div>
+                <div class="lg:w-1/2 text-center">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-6">Spending</h3>
+                    <div class="chart-container mx-auto">
+                        <canvas id="spendingChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-8 md:mt-12">
+                <p class="text-lg text-gray-600">Click any slice on the charts to see the full impact of that category.
+                </p>
+            </div>
+        </section>
+
+        <section id="get-involved"
+            class="animate-reveal text-center bg-purple-600 text-white p-8 md:p-12 rounded-lg shadow-2xl">
+            <h2 class="text-4xl font-bold mb-4">Join Our Connection</h2>
+            <p class="text-xl max-w-4xl mx-auto mb-6 md:mb-8">
+                Your involvement, whether through volunteering, donating, or leadership, fuels our mission of growth and
+                support.
+            </p>
+            <p class="text-sm font-semibold max-w-4xl mx-auto mb-6 md:mb-8 bg-purple-700/50 p-3 rounded">
+                As a 501(c)(6) organization, your generosity is a direct investment in our mission. <br>
+                <a href="#tax-status-anchor" id="tax-deductible-link"
+                    class="text-amber-300 hover:text-amber-500 underline transition duration-300 font-extrabold">Donations
+                    are not tax-deductible.</a> <span class="font-normal text-white/80">Consult your tax advisor for
+                    details on business and trade
+                    deductions.</span>
+            </p>
+            <div class="flex flex-wrap justify-center gap-4 md:gap-6">
+                <a href="mailto:connect@righteousconnections.org"
+                    class="bg-amber-500 hover:bg-amber-600 text-[#4a148c] font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:scale-105 text-sm md:text-base">
+                    Contact Us
+                </a>
+                <button id="open-board-modal"
+                    class="bg-white hover:bg-gray-200 text-[#4a148c] font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:scale-105 text-sm md:text-base">
+                    Board Opportunities
+                </button>
+            </div>
+        </section>
+
+        <section id="tax-status-anchor" class="mt-8 mb-8 md:mt-16 md:mb-16 bg-white p-8 rounded-lg shadow-xl hidden">
+            <h2 class="text-3xl font-bold text-[#4a148c] text-center mb-6 border-b pb-2">Tax Status & Legal Information
+            </h2>
+            <div id="tax-status-content" class="space-y-4">
+                <p class="text-lg text-gray-700">
+                    Righteous Connections is incorporated as a <strong>501(c)(6) organization</strong> under the
+                    Internal Revenue
+                    Code. This classification is typically used for business leagues, chambers of commerce, and boards
+                    of trade.
+                </p>
+                <ul class="list-disc list-inside text-gray-600 space-y-2">
+                    <li><strong>Deductibility of Donations:</strong> Unlike 501(c)(3) organizations, donations to a
+                        501(c)(6) are
+                        <strong class="text-red-600">not tax-deductible</strong> as charitable contributions by the
+                        donor.
+                    </li>
+                    <li><strong>Business Expense Deductibility:</strong> Contributions, including membership dues or
+                        sponsorship
+                        fees,
+                        may be deductible as ordinary and necessary <strong>business expenses</strong> under section 162
+                        of the
+                        Internal Revenue Code, provided they are made for the purpose of carrying on a trade or
+                        business.</li>
+                    <li><strong>Tax Advice:</strong> Please consult with your tax advisor to determine the deductibility
+                        of your
+                        specific contribution.</li>
+                </ul>
+                <div class="text-center pt-4">
+                    <button id="close-tax-status"
+                        class="text-sm text-gray-500 hover:text-[#4a148c] transition duration-300">
+                        Hide Tax Information
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div class="py-16 md:py-24"></div>
+
+    <footer class="bg-[#121528] text-white py-8">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h4 class="text-xl font-bold mb-4 text-amber-500">Righteous Connections</h4>
+                    <p class="text-sm text-gray-400">Driving Economic, Educational, Emotional, & Social Growth.</p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#our-story" class="hover:text-amber-400 transition duration-300">Our Story</a></li>
+                        <li><a href="#programs" class="hover:text-amber-400 transition duration-300">Programs</a></li>
+                        <li><a href="#gala" class="hover:text-amber-400 transition duration-300">Gala</a></li>
+                        <li><a href="#get-involved" class="hover:text-amber-400 transition duration-300">Get
+                                Involved</a>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Connect</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="mailto:connect@righteousconnections.org"
+                                class="hover:text-amber-400 transition duration-300">Email Us</a></li>
+                        <li><a href="./RC_Merch.html" class="hover:text-amber-400 transition duration-300">RC Merch
+                                Store</a></li>
+                        <li><a href="#" class="hover:text-amber-400 transition duration-300" id="footer-tax-info">Tax
+                                Status Info</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Legal</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="/privacy" class="hover:text-amber-400 transition duration-300">Privacy Policy</a>
+                        </li>
+                        <li><a href="/terms" class="hover:text-amber-400 transition duration-300">Terms of Use</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-8 border-t border-gray-700 pt-4 text-center">
+                <p class="text-sm text-gray-500">&copy; 2025 Righteous Connections. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <div id="board-modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-75 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-3xl font-bold text-[#4a148c]">Board Leadership Application Process (8 Steps)</h3>
+                <button id="close-board-modal" class="text-gray-500 hover:text-gray-800 transition duration-300">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <div class="space-y-6">
+                <div>
+                    <h4 class="text-xl font-semibold text-gray-900 flex items-center mb-1">
+                        <span
+                            class="text-sm font-bold bg-[#4a148c] text-white rounded-full h-6 w-6 flex items-center justify-center mr-3">1</span>
+                        Initial Contact & Inquiry
+                    </h4>
+                    <p class="text-gray-600 ml-9">Reach out to our leadership team via email to express your interest in
+                        a board position and receive the introductory package.</p>
+                </div>
+                <div>
+                    <h4 class="text-xl font-semibold text-gray-900 flex items-center mb-1">
+                        <span
+                            class="text-sm font-bold bg-[#4a148c] text-white rounded-full h-6 w-6 flex items-center justify-center mr-3">2</span>
+                        Application Submission
+                    </h4>
+                    <p class="text-gray-600 ml-9">Complete the formal application detailing your experience, expertise,
+                        and vision for Righteous Connections.</p>
+                </div>
+                <div>
+                    <h4 class="text-xl font-semibold text-gray-900 flex items-center mb-1">
+                        <span
+                            class="text-sm font-bold bg-[#4a148c] text-white rounded-full h-6 w-6 flex items-center justify-center mr-3">3</span>
+                        Background & Reference Check
+                    </h4>
+                    <p class="text-gray-600 ml-9">We conduct a thorough vetting process to ensure alignment with our
+                        core
+                        values and mission.</p>
+                </div>
+                <div>
+                    <h4 class="text-xl font-semibold text-gray-900 flex items-center mb-1">
+                        <span
+                            class="text-sm font-bold bg-[#4a148c] text-white rounded-full h-6 w-6 flex items-center justify-center mr-3">4</span>
+                        Initial Interview (Board Members)
+                    </h4>
+                    <p class="text-gray-600 ml-9">A meeting with select current board members to discuss your potential
+                        role and commitment.</p>
+                </div>
+                <div>
+                    <h4 class="text-xl font-semibold text-gray-900 flex items-center mb-1">
+                        <span
+                            class="text-sm font-bold bg-[#4a148c] text-white rounded-full h-6 w-6 flex items-center justify-center mr-3">5</span>
+                        Executive Interview (Leadership)
+                    </h4>
+                    <p class="text-gray-600 ml-9">A final interview with the President or Executive Director.</p>
+                </div>
+                <div>
+                    <h4 class="text-xl font-semibold text-gray-900 flex items-center mb-1">
+                        <span
+                            class="text-sm font-bold bg-[#4a148c] text-white rounded-full h-6 w-6 flex items-center justify-center mr-3">6</span>
+                        Board Vote & Approval
+                    </h4>
+                    <p class="text-gray-600 ml-9">The Board of Directors reviews the recommendation and votes on the new
+                        member appointment.</p>
+                </div>
+                <div>
+                    <h4 class="text-xl font-semibold text-gray-900 flex items-center mb-1">
+                        <span
+                            class="text-sm font-bold bg-[#4a148c] text-white rounded-full h-6 w-6 flex items-center justify-center mr-3">7</span>
+                        Formal Offer Extended
+                    </h4>
+                    <p class="text-gray-600 ml-9">The successful candidate is notified by a formal offer and
+                        documentation.</p>
+                </div>
+                <div>
+                    <h4 class="text-xl font-semibold text-gray-900 flex items-center mb-1">
+                        <span
+                            class="text-sm font-bold bg-amber-500 text-[#4a148c] rounded-full h-6 w-6 flex items-center justify-center mr-3">8</span>
+                        Onboarding & First Meeting
+                    </h4>
+                    <p class="text-gray-600 ml-9">Official integration, orientation materials, and commencement of your
+                        board term.</p>
+                </div>
+            </div>
+            <div class="text-center mt-8">
+                <a href="mailto:1RighteousConnections@gmail.com" id="modal-apply-button"
+                    class="bg-amber-500 hover:bg-amber-600 text-purple-900 font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:scale-105 inline-block">
+                    Apply Now (Step 1)
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="upgrade-modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-75 z-[100] flex items-center justify-center p-4">
+        <div
+            class="bg-white rounded-lg shadow-2xl w-full max-w-xl p-8 max-h-[90vh] overflow-y-auto text-center content-transition">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-3xl font-bold text-[#4a148c]">Confirm Sponsorship Tier</h3>
+                <button id="close-upgrade-modal" class="text-gray-500 hover:text-gray-800 transition duration-300">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <h4 class="text-2xl font-bold text-gray-900 mb-4">You selected the <span id="upgrade-tier-name"
+                    class="text-amber-500">Tier Name</span></h4>
+
+            <div id="upgrade-message-container" class="mt-4 mb-6">
+                <h5 id="upgrade-encouragement-title" class="text-xl font-semibold hidden"></h5>
+                <p id="upgrade-encouragement-text" class="text-md text-gray-700 hidden"></p>
+                <button id="upgrade-to-lifetime-button"
+                    class="hidden mt-4 bg-amber-500 hover:bg-amber-600 text-[#4a148c] font-bold py-2 px-6 rounded-full shadow transition duration-300 transform hover:scale-105">
+                    Upgrade to Lifetime Patron ($25,000)
+                </button>
+            </div>
+
+            <p class="text-lg text-gray-700 mb-6">Your commitment of <span id="upgrade-amount"
+                    class="text-5xl font-extrabold text-[#4a148c]">$X,XXX</span> will be a cornerstone in supporting
+                our mission.</p>
+            <div class="flex flex-col space-y-4">
+                <a id="upgrade-continue-button" href="#get-involved"
+                    class="bg-amber-500 hover:bg-amber-600 text-[#4a148c] font-extrabold py-3 px-10 rounded-full shadow-xl transition duration-300 transform hover:scale-105 inline-block text-xl uppercase tracking-wider">
+                    Continue with Sponsorship
+                </a>
+                <button id="upgrade-close-secondary"
+                    class="text-gray-600 hover:text-gray-900 transition duration-300 text-sm">
+                    Cancel and View Other Options
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- ORBIT WIDGET LOGIC ---
+        // Icon data array for the orbit widget
+        const iconData = [
+            { href: 'https://twitter.com/', label: 'Twitter', type: 'twitter', svg: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18.91 3.51a10.02 10.02 0 0 1-2.91.8c-.89-.5-1.93-.8-3.04-.8-3.04 0-5.5 2.46-5.5 5.5 0 .43.04.85.12 1.25-4.57-.23-8.62-2.42-11.33-5.74-.47.8-.74 1.74-.74 2.74 0 1.9.97 3.58 2.45 4.56-.9 0-1.74-.27-2.47-.64v.07c0 2.66 1.89 4.88 4.4 5.39-.46.12-.94.18-1.44.18-.35 0-.69-.03-1.02-.1a5.5 5.5 0 0 0 5.14 3.82c-1.89 1.48-4.28 2.24-6.88 2.24-.45 0-.89-.03-1.32-.08A10.04 10.04 0 0 0 18.91 3.51z"/></svg>' },
+            { href: 'https://github.com/', label: 'GitHub', type: 'github', svg: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.864 8.16 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.868-.013-1.703-2.782.602-3.368-1.341-3.368-1.341-.454-1.156-1.107-1.464-1.107-1.464-.905-.618.068-.606.068-.606 1.002.07 1.53.992 1.53.992.89 1.522 2.338 1.082 2.91.828.092-.643.349-1.082.634-1.333-2.227-.253-4.568-1.116-4.568-4.963 0-1.096.39-1.99.98-2.682-.098-.253-.427-1.27.094-2.65 0 0 .8-.254 2.62.98.758-.209 1.55-.313 2.34-.317.79.004 1.58.108 2.34.317 1.82-1.234 2.62-.98 2.62-.98.52 1.38.192 2.397.095 2.65.59.692.98 1.586.98 2.682 0 3.856-2.34 4.706-4.576 4.954.358.309.678.92.678 1.862 0 1.343-.012 2.433-.012 2.766 0 .267.18.577.688.484C21.136 20.16 24 16.418 24 12c0-5.523-4.477-10-10-10z"/></svg>' },
+            { href: 'https://linkedin.com/', label: 'LinkedIn', type: 'linkedin', svg: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.447 20.452h-3.553v-5.636c0-1.334-.024-3.057-1.857-3.057-1.859 0-2.14 1.455-2.14 2.955v5.738h-3.554V9.29h3.419v1.561h.047c.473-.896 1.625-1.85 3.366-1.85 3.597 0 4.262 2.36 4.262 5.438v6.253zM5.233 7.771C4.053 7.771 3.1 6.816 3.1 5.638s.953-2.133 2.133-2.133c1.18 0 2.134.954 2.134 2.133 0 1.178-.954 2.133-2.134 2.133zm1.776 12.681H3.457V9.29h3.552v11.162z"/></svg>' },
+            { href: 'https://instagram.com/', label: 'Instagram', type: 'instagram', svg: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.163c3.204 0 3.584.012 4.85.07c1.499.06 2.072.298 2.573.498.68.253 1.159.574 1.572.98.413.407.726.892.98 1.571.2.5.437 1.073.497 2.572.058 1.265.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.06 1.499-.298 2.072-.498 2.573-.253.68-.574 1.159-.98 1.572-.407.413-.892.726-1.571.98-.5.2-1.073.437-2.572.497-1.265.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.499-.06-2.072-.298-2.573-.498-.68-.253-1.159-.574-1.572-.98-.413-.407-.726-.892-.98-1.571-.2-.5-.437-1.073-.497-2.572-.058-1.265-.07-1.646-.07-4.85s.012-3.584.07-4.85c.06-1.499.298-2.072.498-2.573.253-.68.574-1.159.98-1.572.407-.413.892-.726 1.571-.98.5-.2 1.073-.437 2.572-.497 1.265-.058 1.646-.07 4.85-.07zm0-2.163c-3.267 0-3.655.013-4.947.072-1.65.07-2.753.333-3.738.718-1.026.408-1.897.973-2.614 1.69-.718.718-1.282 1.588-1.69 2.613-.385.985-.648 2.088-.718 3.738-.059 1.292-.072 1.68-.072 4.947s.013 3.655.072 4.947c.07 1.65.333 2.753.718 3.738 2.68 2.68 5.757 4.02 12 4.02s9.32-1.34 12-4.02c.385-.985.648-2.088.718-3.738.059-1.292.072-1.68.072-4.947s-.013-3.655-.072-4.947c-.07-1.65-.333-2.753-.718-3.738-.408-1.026-.973-1.897-1.69-2.614-1.688-1.688-3.618-2.316-5.73-2.502-1.292-.058-1.68-.072-4.947-.072zm0 5.484c-3.59 0-6.49 2.9-6.49 6.49s2.9 6.49 6.49 6.49 6.49-2.9 6.49-6.49-2.9-6.49-6.49-6.49zm0 10.829c-2.395 0-4.339-1.944-4.339-4.339s1.944-4.339 4.339-4.339 4.339 1.944 4.339 4.339-1.944 4.339-4.339 4.339zm6.65-10.43a1.44 1.44 0 1 0 0-2.88 1.44 1.44 0 0 0 0 2.88z"/></svg>' },
+            { href: 'https://facebook.com/', label: 'Facebook', type: 'facebook', svg: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.675 0h-21.35C.594 0 0 .594 0 1.328v21.344C0 23.406.594 24 1.325 24H12.3c.5 0 .5-.05.5-.66v-7.387H9.986v-3.078h2.813V9.73c0-2.909 1.776-4.502 4.385-4.502 1.243 0 2.31.092 2.624.133v3.01H17.43c-1.42 0-1.695.676-1.695 1.666v2.124h3.366l-.538 3.078h-2.828v7.387c0 .61.05.66.5.66h5.366c.73 0 1.325-.594 1.325-1.328V1.328C24 .594 23.406 0 22.675 0z"/></svg>' },
+            { href: 'mailto:connect@righteousconnections.org', label: 'Email', type: 'email', svg: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>' }
+        ];
+
+        let RADIUS;
+        let angle = 0;
+        let speed = 0.00000001; // Initial slow creep
+        let targetSpeed = 0.00000001; // Target speed for no interaction
+        let lastTime = 0;
+        let icons = [];
+
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        function readVar(name) {
+            const orbitWrap = document.querySelector('.orbit-wrap');
+            return parseFloat(getComputedStyle(orbitWrap).getPropertyValue(name).replace('px', ''));
+        }
+
+        function setupOrbit() {
+            const orbitWrap = document.querySelector('.orbit-wrap');
+            const orbit = document.getElementById('orbit');
+            if (!orbitWrap || !orbit) return;
+
+            RADIUS = readVar('--radius');
+            const fragment = document.createDocumentFragment();
+
+            icons = iconData.map((data, i) => {
+                // Create Icon Element
+                const iconEl = document.createElement('a');
+                iconEl.classList.add('icon', 'group');
+                iconEl.setAttribute('href', data.href);
+                iconEl.setAttribute('aria-label', data.label);
+                iconEl.setAttribute('data-icon-type', data.type);
+                iconEl.setAttribute('target', '_blank');
+                iconEl.setAttribute('rel', 'noopener noreferrer');
+                iconEl.setAttribute('title', data.label);
+
+                // Add inner span and SVG
+                const span = document.createElement('span');
+                span.innerHTML = data.svg;
+                iconEl.appendChild(span);
+
+                fragment.appendChild(iconEl);
+
+                // Calculate the base angle for even distribution
+                const baseAngle = (i / iconData.length) * 2 * Math.PI;
+
+                return { el: iconEl, base: baseAngle, type: data.type };
+            });
+
+            orbit.appendChild(fragment);
+
+            // Initial position setup (instantly)
+            icons.forEach(({ el, base }) => {
+                el.style.transform = transformAt(base);
+            });
+
+            // Add interactivity
+            const logo = document.getElementById('logo');
+            logo.addEventListener('mouseenter', () => orbitWrap.classList.add('logo-hover'));
+            logo.addEventListener('mouseleave', () => orbitWrap.classList.remove('logo-hover'));
+
+            icons.forEach(icon => {
+                icon.el.addEventListener('mouseenter', () => targetSpeed = 0.00000001); // Slow down on icon hover
+                icon.el.addEventListener('mouseleave', () => targetSpeed = 0.0003); // Resume on icon un-hover
+            });
+
+            // Start animation
+            if (!reducedMotion) {
+                targetSpeed = 0.0003; // Normal speed
+                requestAnimationFrame(tick);
+            }
+        }
+
+        function transformAt(theta) {
+            const x = RADIUS * Math.cos(theta);
+            const y = RADIUS * Math.sin(theta);
+            // Combined transform: translate to orbit position, then recenter
+            return `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+        }
+
+        function tick(now) {
+            if (!lastTime) lastTime = now;
+            const deltaTime = now - lastTime;
+            lastTime = now;
+
+            // Simple physics for smooth acceleration/deceleration
+            const easing = 0.08;
+            speed += (targetSpeed - speed) * easing;
+            angle += speed * deltaTime;
+
+            icons.forEach(({ el, base }) => {
+                const theta = base + angle;
+                el.style.transform = transformAt(theta);
+            });
+
+            if (!reducedMotion) {
+                requestAnimationFrame(tick);
+            }
+        }
+
+
+        // --- DYNAMIC CONTENT & DATA FETCHING (Programs, Testimonials, Sponsors) ---
+
+        // Google Sheets GIDs
+        const PUBLISHED_BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMsZeFfmW5hwiFwswHpKUBuZANGQkkfe6Hih5DqV3YXnNtmZBrbvc8txXkbu6wSysdcaQbOsp6qJDc';
+        const PROGRAM_GID = '1147932087';
+        const TESTIMONIAL_GID = '2053904015';
+        const SPONSOR_GID = '1016622329';
+
+        // JSON/TSV Paths
+        const PROGRAM_JSON_URL = `${PUBLISHED_BASE_URL}/pub?gid=${PROGRAM_GID}&output=json`;
+        const TESTIMONIAL_JSON_URL = `${PUBLISHED_BASE_URL}/pub?gid=${TESTIMONIAL_GID}&output=json`;
+        const SPONSOR_JSON_URL = `${PUBLISHED_BASE_URL}/pub?gid=${SPONSOR_GID}&output=json`;
+
+        const PROGRAM_LOCAL_TSV_PATH = './programs_data.tsv';
+        const TESTIMONIAL_LOCAL_TSV_PATH = './testimonials_data.tsv';
+        const SPONSOR_LOCAL_TSV_PATH = './sponsors_data.tsv';
+
+        /**
+         * Parses the Google Visualization JSON response format.
+         * @param {Object} json - The JSON object from Google's visualization API.
+         * @returns {Array<Object>} - Array of processed data objects.
+         */
+        function processSheetJSON(json) {
+            const columns = json.table.cols.map(col => col.label);
+            const rows = json.table.rows;
+            if (!rows || rows.length === 0) return [];
+
+            return rows.map(row => {
+                const obj = {};
+                row.c.forEach((cell, i) => {
+                    // Use column label as key, and cell value (or formatted value) as value
+                    const key = columns[i];
+                    if (key) {
+                        obj[key] = cell && cell.f ? cell.f : cell && cell.v !== undefined ? cell.v : null;
+                    }
+                });
+                return obj;
+            });
+        }
+
+        /**
+         * Fetches data from a Google Sheet JSON endpoint.
+         * @param {string} url - The JSON export URL.
+         * @returns {Promise<Array<Object>>} - Promise resolving to an array of data objects.
+         */
+        async function fetchSheetData(url) {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP Error! Status: ${response.status}.`);
+            }
+            const text = await response.text();
+
+            // Check if it's the raw JSON array (which the SPONSOR_JSON_URL returns) or the Google Visualization wrapper
+            try {
+                // Attempt to parse as a direct array (expected from SPONSOR URL)
+                const jsonArray = JSON.parse(text);
+                if (Array.isArray(jsonArray)) return jsonArray;
+            } catch (e) {
+                // If it fails, assume it's the Google Visualization API wrapper
+            }
+
+            // Clean the visualization wrapper text
+            const cleanedText = text.replace('/*O_o*/\ngoogle.visualization.Query.setResponse(', '').slice(0, -2);
+
+            try {
+                const json = JSON.parse(cleanedText);
+                return processSheetJSON(json);
+            } catch (e) {
+                console.error("Failed to parse Google Sheet JSON response:", e);
+                throw new Error("Invalid JSON format from Google Sheet.");
+            }
+        }
+
+
+        /**
+         * Parses local TSV data.
+         * @param {string} tsvText - The raw TSV file content.
+         * @returns {Array<Object>} - Array of processed data objects.
+         */
+        function parseLocalTSV(tsvText) {
+            const lines = tsvText.trim().split('\n').filter(line => line.trim() !== '');
+            if (lines.length === 0) return [];
+
+            const headers = lines[0].split('\t').map(h => h.trim());
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split('\t');
+                const obj = {};
+                headers.forEach((header, j) => {
+                    obj[header] = values[j] ? values[j].trim() : null;
+                });
+
+                // Only include rows where all primary columns (like Title) are not empty
+                if (obj.Title || obj.Quote || obj.Name) {
+                    data.push(obj);
+                }
+            }
+            return data;
+        }
+
+        /**
+         * Fetches and parses local TSV data.
+         */
+        async function fetchLocalTSVData(path) {
+            const response = await fetch(path);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch local file: ${response.statusText}`);
+            }
+            const tsvText = await response.text();
+            return parseLocalTSV(tsvText);
+        }
+
+        // --- CARD CREATION UTILITIES ---
+        function createSponsorLogo(sponsor) {
+            // Assumes sheet columns are 'Name', 'ImageURL', 'WebsiteURL'
+            const { Name, ImageURL, WebsiteURL } = sponsor;
+            if (!Name || !ImageURL) return '';
+
+            const logoHtml = `<img src="${ImageURL}" alt="${Name} Logo" loading="lazy">`;
+            return `
+                    <a href="${WebsiteURL}" target="_blank" rel="noopener noreferrer" class="logo-item" title="${Name}">
+                        ${logoHtml}
+                    </a>
+                `;
+        }
+
+        function createProgramCard(program) {
+            // Assumes sheet columns are 'ID', 'Title', 'Description', 'Color', 'Icon'
+            const { Title, Description, Color, Icon } = program;
+            const colorClass = Color || 'gray-300';
+            const iconHtml = Icon || '<span class="mr-2 text-3xl text-gray-500">❓</span>';
+            const buttonText = Title.includes('Mentorship') ? 'Learn About Mentoring' : Title.includes('Health') ? 'Find Resources' : Title.includes('Finance') ? 'View Budgeting Tools' : 'Get Started';
+
+            // EDITED: Added hover:scale-[1.03]
+            return `
+                    <div class="scroll-carousel-item bg-white p-6 rounded-lg shadow-xl hover:shadow-2xl transition duration-300 border-t-4 border-${colorClass} hover:scale-[1.03]">
+                        <h3 class="text-2xl font-semibold text-gray-900 mb-3 flex items-center">
+                            ${iconHtml} ${Title || 'Untitled Program'}
+                        </h3>
+                        <p class="text-gray-600 mb-4 line-clamp-3">
+                            ${Description || 'No description provided.'}
+                        </p>
+                        <a href="#get-involved" class="text-sm font-semibold text-amber-500 hover:text-amber-600 transition duration-300">
+                            ${buttonText} →
+                        </a>
+                    </div>
+                `;
+        }
+
+        function createTestimonialCard(testimonial) {
+            // Assumes sheet columns are 'ID', 'Quote', 'Name', 'Affiliation', 'Color'
+            const { Quote, Name, Affiliation, Color } = testimonial;
+            const quoteText = Quote || 'No quote available.';
+            const nameText = Name || 'Anonymous';
+            const affiliationText = Affiliation ? `, ${Affiliation}` : '';
+            const borderClass = Color ? `border-b-4 border-${Color}` : 'border-b-4 border-amber-500';
+
+            return `
+                    <div class="scroll-carousel-item bg-white p-6 rounded-lg shadow-xl ${borderClass} hover:shadow-2xl transition duration-300 hover:scale-[1.03]">
+                        <p class="font-serif italic text-xl text-neutral-700 mb-4">"${quoteText}"</p>
+                        <h4 class="font-semibold text-secondary-dark text-lg">- ${nameText} <span class="text-sm font-normal text-gray-500">${affiliationText}</span></h4>
+                    </div>
+                `;
+        }
+
+        // --- CAROUSEL NAVIGATION LOGIC ---
+        function setupCarousel(carousel, prevBtn, nextBtn) {
+            if (!carousel || !prevBtn || !nextBtn) return;
+
+            // Check if we are below the md breakpoint
+            const isMobile = window.matchMedia('(max-width: 767px)').matches;
+
+            // Function to handle the actual scrolling
+            const scrollCarousel = (direction) => {
+                const scrollPosition = carousel.scrollLeft;
+                const items = carousel.querySelectorAll('.scroll-carousel-item');
+                if (items.length === 0) return;
+
+                let targetScroll = 0;
+
+                if (isMobile) {
+                    // Mobile: Scroll by the width of a single item (85% of container)
+                    const itemWidth = items[0].offsetWidth; // Includes margin-right
+                    if (direction === 'next') {
+                        targetScroll = scrollPosition + itemWidth;
+                        // Loop back to the start if we hit the end
+                        if (targetScroll >= (carousel.scrollWidth - carousel.clientWidth - 10)) { // -10 for tolerance
+                            targetScroll = 0;
+                        }
+                    } else {
+                        targetScroll = scrollPosition - itemWidth;
+                        // Loop to the end if we hit the start
+                        if (targetScroll < 0) {
+                            targetScroll = carousel.scrollWidth - carousel.clientWidth;
+                        }
+                    }
+                } else {
+                    // Desktop/Tablet: Scroll by the width of the container
+                    const containerWidth = carousel.clientWidth;
+                    const scrollAmount = containerWidth;
+                    if (direction === 'next') {
+                        targetScroll = scrollPosition + scrollAmount;
+                        // Check if we reached the end (or near the end)
+                        if (targetScroll > (carousel.scrollWidth - containerWidth + 30)) {
+                            targetScroll = 0; // Go back to the beginning
+                        }
+                    } else {
+                        targetScroll = scrollPosition - scrollAmount;
+                        // Check if we reached the start (or near the start)
+                        if (targetScroll < 30) {
+                            targetScroll = carousel.scrollWidth - containerWidth; // Go to the end
+                            // Snap to the end or just short of it, don't scroll too far to the right, then snap
+                        }
+                    }
+                }
+
+                carousel.scrollTo({
+                    left: targetScroll,
+                    behavior: 'smooth'
+                });
+            };
+
+            // Auto-scroll logic (for Programs and Testimonials only)
+            let autoScrollInterval;
+            const startAutoScroll = () => {
+                // Only enable auto-scroll on desktop/tablet
+                if (isMobile) return;
+
+                autoScrollInterval = setInterval(() => {
+                    scrollCarousel('next');
+                }, 5000); // Scroll every 5 seconds
+            };
+
+            const resetAutoScroll = () => {
+                if (autoScrollInterval) {
+                    clearInterval(autoScrollInterval);
+                    startAutoScroll();
+                }
+            };
+
+            prevBtn.addEventListener('click', () => {
+                scrollCarousel('prev');
+                resetAutoScroll();
+            });
+
+            nextBtn.addEventListener('click', () => {
+                scrollCarousel('next');
+                resetAutoScroll();
+            });
+
+            carousel.addEventListener('scroll', resetAutoScroll);
+            carousel.addEventListener('mouseenter', () => clearInterval(autoScrollInterval));
+            carousel.addEventListener('mouseleave', startAutoScroll);
+
+            startAutoScroll(); // Start auto-scroll initially
+        }
+
+        // --- ASYNCHRONOUS DATA LOADING (MAIN FUNCTION) ---
+        async function loadDynamicContent() {
+
+            // 1. PROGRAMS
+            const programsCarousel = document.getElementById('programs-carousel');
+
+            function renderPrograms(data, source) {
+                console.log(`Rendering Programs from: ${source}`);
+                programsCarousel.innerHTML = '';
+                // Sort by ID (assumes ID is a number)
+                data.sort((a, b) => (parseInt(a.ID) || 0) - (parseInt(b.ID) || 0));
+                data.forEach(program => {
+                    programsCarousel.innerHTML += createProgramCard(program);
+                });
+                setupCarousel(programsCarousel, document.getElementById('programs-prev'), document.getElementById('programs-next'));
+            }
+
+            try {
+                // 1. Attempt Remote JSON
+                const programsData = await fetchSheetData(PROGRAM_JSON_URL);
+                console.log("Programs loaded from remote JSON.");
+                renderPrograms(programsData, 'Google Sheet (JSON)');
+            } catch (remoteError) {
+                console.warn("Remote JSON failed. Attempting local TSV fallback...", remoteError);
+                // 2. Fallback to Local TSV
+                try {
+                    const programsData = await fetchLocalTSVData(PROGRAM_LOCAL_TSV_PATH);
+                    console.log("Programs loaded successfully from local TSV.");
+                    renderPrograms(programsData, 'Local File (programs_data.tsv)');
+                } catch (localError) {
+                    console.error("Local TSV fallback failed.", localError);
+                    // 3. Display Final Error
+                    programsCarousel.innerHTML = `
+                            <div class="scroll-carousel-item bg-red-100 p-6 rounded-lg shadow-xl border-t-4 border-red-500">
+                                <h3 class="text-2xl font-semibold text-red-700 mb-3">Error Loading Programs</h3>
+                                <p class="text-red-600">
+                                    Data access failed from both the Google Sheet and the local <strong>programs_data.tsv</strong>.
+                                </p>
+                                <p class="text-xs text-red-400 mt-4">Check console for details.</p>
+                            </div>
+                        `;
+                }
+            }
+
+            // 2. TESTIMONIALS
+            const testimonialsCarousel = document.getElementById('testimonials-carousel');
+
+            function renderTestimonials(data, source) {
+                console.log(`Rendering Testimonials from: ${source}`);
+                testimonialsCarousel.innerHTML = '';
+                // Sort by ID (assumes ID is a number)
+                data.sort((a, b) => (parseInt(a.ID) || 0) - (parseInt(b.ID) || 0));
+                data.forEach(testimonial => {
+                    testimonialsCarousel.innerHTML += createTestimonialCard(testimonial);
+                });
+                setupCarousel(testimonialsCarousel, document.getElementById('testimonials-prev'), document.getElementById('testimonials-next'));
+            }
+
+            try {
+                // 1. Attempt Remote JSON
+                const testimonialData = await fetchSheetData(TESTIMONIAL_JSON_URL);
+                console.log("Testimonials loaded from remote JSON.");
+                renderTestimonials(testimonialData, 'Google Sheet (JSON)');
+            } catch (remoteError) {
+                console.warn("Remote JSON failed. Attempting local TSV fallback...", remoteError);
+                // 2. Fallback to Local TSV
+                try {
+                    const testimonialData = await fetchLocalTSVData(TESTIMONIAL_LOCAL_TSV_PATH);
+                    console.log("Testimonials loaded successfully from local TSV.");
+                    renderTestimonials(testimonialData, 'Local File (testimonials_data.tsv)');
+                } catch (localError) {
+                    console.error("Local TSV fallback failed. Displaying placeholder.", localError);
+                    // Leave the placeholder text in the HTML if everything fails
+                }
+            }
+
+            // 3. SPONSORS
+            const sponsorBannerInner = document.getElementById('sponsor-banner-inner');
+
+            function renderSponsors(data) {
+                console.log("Rendering Sponsors...");
+                // Filter out any entries without an ImageURL or Name
+                const validSponsors = data.filter(s => s.ImageURL && s.Name);
+                if (validSponsors.length === 0) {
+                    document.getElementById('sponsors').classList.add('hidden');
+                    return;
+                }
+
+                // Render the logos twice for continuous scrolling effect
+                let logosHtml = '';
+                validSponsors.forEach(sponsor => { logosHtml += createSponsorLogo(sponsor); });
+
+                sponsorBannerInner.innerHTML = logosHtml + logosHtml;
+            }
+
+            try {
+                // 1. Attempt Remote JSON
+                let sponsorData = await fetchSheetData(SPONSOR_JSON_URL);
+                console.log("Sponsors loaded from remote JSON.");
+
+                let cleanData = [];
+                if (Array.isArray(sponsorData)) {
+                    cleanData = sponsorData;
+                } else if (sponsorData.feed) {
+                    // Parse if it was the old Google format (though fetchSheetData handles this mostly)
+                    cleanData = processSheetJSON(sponsorData);
+                } else {
+                    // Fallback if fetchSheetData already cleaned it
+                    cleanData = sponsorData;
+                }
+
+                if (cleanData.length > 0) {
+                    renderSponsors(cleanData);
+                } else {
+                    throw new Error("Remote data loaded successfully but was empty.");
+                }
+
+            } catch (remoteError) {
+                console.warn("Remote Sponsor JSON failed. Attempting local TSV fallback...", remoteError);
+                // 2. Fallback to Local TSV
+                try {
+                    const sponsorData = await fetchLocalTSVData(SPONSOR_LOCAL_TSV_PATH);
+                    console.log("Sponsors loaded successfully from local TSV.");
+                    if (sponsorData.length > 0) {
+                        renderSponsors(sponsorData);
+                    } else {
+                        // If TSV loads but returns no data, fall through to hiding
+                        throw new Error("Local TSV data was empty.");
+                    }
+                } catch (localError) {
+                    console.error("Local Sponsor TSV fallback failed. Hiding banner.", localError);
+                    // 3. Hide the sponsor banner on total failure
+                    document.getElementById('sponsors').classList.add('hidden');
+                }
+            }
+        }
+
+        // --- SCROLL REVEAL ANIMATION ---
+        function setupScrollReveal() {
+            const sections = document.querySelectorAll('.animate-reveal');
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.2
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        // Optional: stop observing once it's revealed
+                        // observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        }
+
+        // --- CHART.JS CONFIGURATION ---
+        function createInteractiveChart(canvasId, chartData, title) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+
+            // Map Tailwind colors to Chart.js colors
+            const getChartColors = (backgrounds) => {
+                const colors = {
+                    '#4a148c': '#4a148c', // Purple
+                    '#f59e0b': '#f59e0b', // Amber
+                    '#10b981': '#10b981', // Emerald
+                    '#3b82f6': '#3b82f6', // Blue
+                    '#ef4444': '#ef4444', // Red
+                    '#9333ea': '#9333ea', // Violet
+                };
+                return backgrounds.map(bg => colors[bg] || '#94a3b8'); // Fallback to slate-400
+            };
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        data: chartData.data,
+                        backgroundColor: getChartColors(chartData.backgrounds),
+                        hoverOffset: 4,
+                        borderWidth: 0 // Remove white border
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: false,
+                            text: title,
+                            font: { size: 18 }
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 15,
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    onClick: (evt, element) => {
+                        // FIX 2: Check if a slice was actually clicked (prevents failure when clicking empty space)
+                        if (element.length === 0) {
+                            return;
+                        }
+                        const index = element[0].index;
+                        const targetId = chartData.links[index];
+
+                        if (targetId.startsWith('http') || targetId.startsWith('mailto')) {
+                            window.location.href = targetId;
+                        } else {
+                            const targetElement = document.querySelector(targetId);
+                            if (targetElement) {
+                                // Special handling for the tax-status section
+                                if (targetId === '#tax-status-anchor') {
+                                    // Scroll to the anchor
+                                    targetElement.scrollIntoView({ behavior: 'smooth' });
+                                    // Also ensure the content is visible
+                                    const taxStatusContent = document.getElementById('tax-status-content');
+                                    if (taxStatusContent && targetElement.classList.contains('hidden')) {
+                                        targetElement.classList.remove('hidden');
+                                    }
+                                } else {
+                                    // Standard smooth scroll
+                                    targetElement.scrollIntoView({ behavior: 'smooth' });
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+
+        // --- MAIN DOMContentLoaded LISTENER ---
+        document.addEventListener('DOMContentLoaded', () => {
+
+            setupOrbit();
+            loadDynamicContent(); // Load programs, testimonials, and sponsors
+            setupScrollReveal(); // Set up the scroll reveal animation
+
+            // --- Funding Allocation Chart.js Configuration (Spending & Sources) ---
+            // EDITED: New interactive charts logic
+            const spendingData = {
+                labels: ['Core Programs', 'Administrative & Overhead', 'Fundraising & Events', 'Community Outreach'],
+                data: [65, 15, 10, 10],
+                backgrounds: ['#4a148c', '#f59e0b', '#10b981', '#3b82f6'],
+                // Links point to relevant sections or a generic contact page
+                links: ['#programs', '#get-involved', '#gala', 'mailto:connect@righteousconnections.org']
+            };
+
+            const sourcesData = {
+                labels: ['Gala Sponsorships', 'Merchandise Sales', 'Grants & Partnerships', 'Individual Donations'],
+                data: [45, 25, 15, 15],
+                backgrounds: ['#9333ea', '#ef4444', '#f59e0b', '#3b82f6'],
+                // Links point to relevant sections
+                links: ['#gala-tiers-anchor', '#featured-merch', '#get-involved', '#get-involved']
+
+            };
+
+            createInteractiveChart('sourcesChart', sourcesData, 'Funding Sources');
+            createInteractiveChart('spendingChart', spendingData, 'Spending Allocation');
+
+
+            // --- Modal and Header Logic ---
+
+            // Board Modal
+            const boardModal = document.getElementById('board-modal');
+            const openBoardModalButton = document.getElementById('open-board-modal');
+            const closeBoardModalButton = document.getElementById('close-board-modal');
+
+            if (openBoardModalButton) {
+                openBoardModalButton.addEventListener('click', () => {
+                    boardModal.classList.remove('hidden');
+                });
+            }
+            if (closeBoardModalButton) {
+                closeBoardModalButton.addEventListener('click', () => {
+                    boardModal.classList.add('hidden');
+                });
+            }
+
+            // Sponsorship Tier Upgrade Modal (NEW LOGIC)
+            const upgradeModal = document.getElementById('upgrade-modal');
+            const closeUpgradeModalButton = document.getElementById('close-upgrade-modal');
+            const upgradeContinueButton = document.getElementById('upgrade-continue-button');
+            const upgradeTierName = document.getElementById('upgrade-tier-name');
+            const upgradeAmountDisplay = document.getElementById('upgrade-amount');
+            const upgradeCloseSecondary = document.getElementById('upgrade-close-secondary');
+
+            // New dynamic elements
+            const messageContainer = document.getElementById('upgrade-message-container');
+            const encouragementTitle = document.getElementById('upgrade-encouragement-title');
+            const encouragementText = document.getElementById('upgrade-encouragement-text');
+            const upgradeToLifetimeButton = document.getElementById('upgrade-to-lifetime-button'); // NEW: Upgrade button
+            const upgradeModalContent = upgradeModal.querySelector('.content-transition'); // For elegant transition
+
+            // Helper function for confetti
+            function launchConfetti() {
+                // Ensure confetti function is available from the CDN
+                if (typeof confetti === 'function') {
+                    confetti({
+                        particleCount: 100,
+                        spread: 70,
+                        origin: { y: 0.6 }
+                    });
+                } else {
+                    console.warn("Confetti library not loaded.");
+                }
+            }
+
+
+            document.querySelectorAll('.sponsor-gala').forEach(button => {
+                button.addEventListener('click', function () {
+                    const amount = parseInt(this.getAttribute('data-amount'));
+                    const tier = this.getAttribute('data-tier');
+                    const formattedAmount = new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD',
+                        minimumFractionDigits: 0
+                    }).format(amount);
+
+                    // Reset state
+                    messageContainer.classList.remove('hidden', 'bg-green-50', 'p-4', 'rounded-lg', 'shadow-inner');
+                    encouragementTitle.classList.remove('hidden', 'text-green-700', 'text-gray-800', 'block');
+                    encouragementText.classList.remove('hidden');
+                    upgradeContinueButton.textContent = "Continue with Sponsorship";
+                    upgradeCloseSecondary.classList.remove('hidden');
+                    upgradeToLifetimeButton.classList.add('hidden'); // Hide the upgrade button by default
+
+                    // Set default modal content
+                    upgradeTierName.textContent = tier + (tier === 'Lifetime' ? ' Patron' : ' Table');
+                    upgradeAmountDisplay.textContent = formattedAmount;
+                    upgradeContinueButton.setAttribute('href', '#get-involved');
+                    upgradeContinueButton.classList.remove('bg-[#4a148c]', 'text-white');
+                    upgradeContinueButton.classList.add('bg-amber-500', 'text-[#4a148c]');
+
+                    if (amount === 25000) {
+                        // LIFETIME TIER SELECTED
+                        messageContainer.classList.add('bg-green-50', 'p-4', 'rounded-lg', 'shadow-inner');
+
+                        encouragementTitle.textContent = "🎉 Incredible Commitment! Thank You! 🎉";
+                        encouragementTitle.classList.add('text-green-700', 'block');
+
+                        encouragementText.innerHTML = "Your pledge as a <strong>Lifetime Patron</strong> is a permanent cornerstone of Righteous Connections. Click <strong>'Finalize Patronage'</strong> to proceed to the commitment form.";
+
+                        upgradeContinueButton.textContent = "Finalize Lifetime Patronage";
+                        upgradeContinueButton.classList.remove('bg-amber-500', 'text-[#4a148c]');
+                        upgradeContinueButton.classList.add('bg-[#4a148c]', 'text-white');
+
+                        // Hide secondary cancel button as the user committed to the highest tier
+                        upgradeCloseSecondary.classList.add('hidden');
+
+                        launchConfetti(); // Trigger confetti
+
+                    } else {
+                        // WHITE, PURPLE, or BLACK TABLE SELECTED (Tiers < $25,000)
+                        const lifetimeAmount = new Intl.NumberFormat('en-US', {
+                            style: 'currency',
+                            currency: 'USD',
+                            minimumFractionDigits: 0
+                        }).format(25000);
+
+                        encouragementTitle.textContent = "Maximize Your Impact!";
+                        encouragementTitle.classList.add('text-gray-800', 'block'); // Ensure it's displayed
+
+                        // Main encouragement text
+                        encouragementText.innerHTML = `
+                                The <strong>Lifetime Patron Membership</strong> is ${lifetimeAmount} and includes permanent recognition and tickets to every annual Gala for life.
+                            `;
+                        encouragementText.classList.remove('hidden');
+
+                        upgradeContinueButton.textContent = `Continue with ${tier} Table`;
+
+                        // Show the upgrade button
+                        upgradeToLifetimeButton.classList.remove('hidden');
+                    }
+
+                    // Apply content transition class and make content visible
+                    upgradeModalContent.classList.remove('is-visible');
+                    // Ensure a DOM repaint cycle happens before setting visibility
+                    requestAnimationFrame(() => upgradeModalContent.classList.add('is-visible'));
+
+                    upgradeModal.classList.remove('hidden');
+                });
+            });
+
+            // NEW: Handler for the new 'Upgrade to Lifetime' button
+            if (upgradeToLifetimeButton) {
+                upgradeToLifetimeButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    // 1. Elegant Transition: Fade out content before changing text
+                    upgradeModalContent.classList.remove('is-visible');
+
+                    // Set a timeout to wait for the transition to finish (0.3s defined in CSS)
+                    setTimeout(() => {
+                        // 2. Change content to 'Thank You' state (simulate 25000 click)
+                        const formattedAmount = new Intl.NumberFormat('en-US', {
+                            style: 'currency',
+                            currency: 'USD',
+                            minimumFractionDigits: 0
+                        }).format(25000);
+
+                        upgradeTierName.textContent = 'Lifetime Patron';
+                        upgradeAmountDisplay.textContent = formattedAmount;
+
+                        // Reset to thank you state
+                        messageContainer.classList.remove('hidden');
+                        messageContainer.classList.add('bg-green-50', 'p-4', 'rounded-lg', 'shadow-inner');
+
+                        encouragementTitle.textContent = "🎉 Incredible Commitment! Thank You! 🎉";
+                        encouragementTitle.classList.add('text-green-700');
+                        encouragementTitle.classList.remove('hidden', 'text-gray-800');
+
+                        encouragementText.innerHTML = "Your pledge as a <strong>Lifetime Patron</strong> is a permanent cornerstone of Righteous Connections. Click <strong>'Finalize Patronage'</strong> to proceed to the commitment form.";
+
+                        upgradeContinueButton.textContent = "Finalize Lifetime Patronage";
+                        upgradeContinueButton.setAttribute('href', '#get-involved'); // Keeps action on page
+                        upgradeContinueButton.classList.remove('bg-amber-500', 'text-[#4a148c]');
+                        upgradeContinueButton.classList.add('bg-[#4a148c]', 'text-white');
+
+                        upgradeToLifetimeButton.classList.add('hidden');
+                        upgradeCloseSecondary.classList.add('hidden');
+
+                        launchConfetti(); // 3. Trigger confetti
+
+                        // 4. Elegant Transition: Fade in new content
+                        upgradeModalContent.classList.add('is-visible');
+
+                    }, 300); // Wait for fade-out (300ms transition)
+                });
+            }
+
+            // Close modal handlers
+            const closeUpgradeModal = () => {
+                upgradeModal.classList.add('hidden');
+            };
+
+            closeUpgradeModalButton.addEventListener('click', closeUpgradeModal);
+            upgradeCloseSecondary.addEventListener('click', closeUpgradeModal);
+
+            // Close when clicking outside the modal
+            upgradeModal.addEventListener('click', (e) => {
+                if (e.target === upgradeModal) {
+                    closeUpgradeModal();
+                }
+            });
+
+
+            // Tax Status Toggle Logic
+            const taxToggleButtons = document.querySelectorAll('#nav-tax-toggle, #mobile-tax-toggle, #footer-tax-info');
+            const taxDeductibleLink = document.getElementById('tax-deductible-link'); // NEW ELEMENT
+            const taxStatusSection = document.getElementById('tax-status-anchor');
+            const closeTaxStatusButton = document.getElementById('close-tax-status');
+
+            // Generic toggle handler
+            const handleTaxToggle = function (e) {
+                e.preventDefault();
+                taxStatusSection.classList.toggle('hidden');
+                if (!taxStatusSection.classList.contains('hidden')) {
+                    // Smooth scroll to the section
+                    taxStatusSection.scrollIntoView({ behavior: 'smooth' });
+                }
+                // Close mobile menu if open
+                const mobileMenu = document.getElementById('mobile-menu');
+                if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                    mobileMenu.classList.add('hidden');
+                }
+            };
+
+            taxToggleButtons.forEach(button => {
+                button.addEventListener('click', handleTaxToggle);
+            });
+
+            // NEW: Special handler for the "Donations are not tax-deductible" link
+            if (taxDeductibleLink) {
+                taxDeductibleLink.addEventListener('click', handleTaxToggle);
+            }
+
+            if (closeTaxStatusButton) {
+                closeTaxStatusButton.addEventListener('click', () => {
+                    taxStatusSection.classList.add('hidden');
+                });
+            }
+
+
+            // Mobile Menu Toggle
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+
+            // Smooth Scrolling for all other anchors
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                // Ignore the tax-status-anchor and tax-deductible-link here, as their scrolling is handled by the tax-status toggle logic above
+                if (anchor.id === 'nav-tax-toggle' || anchor.id === 'mobile-tax-toggle' || anchor.id === 'footer-tax-toggle' || anchor.id === 'footer-tax-info' || anchor.id === 'tax-deductible-link') {
+                    return;
+                }
+
+                anchor.addEventListener('click', function (e) {
+                    // Check if it's a mailto or external link
+                    if (this.href.startsWith('mailto:') || !this.href.includes('#')) {
+                        return;
+                    }
+
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                    if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+        });
+
+    </script>
+
+</body>
+
+</html>
